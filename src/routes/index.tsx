@@ -1,42 +1,50 @@
-import React from 'react';
-import { Route, Routes } from 'react-router-dom';
-import Layout from '../components/Layout';
-import Home from '../pages/Home';
-import Dashboard from '../pages/Dashboard';
-import Profile from '../pages/Profile';
-import Login from '../pages/Login';
-import RequiredAuth from './RequiredAuth';
+import React from "react";
+import { Route, Routes } from "react-router-dom";
+import Layout from "../components/Layout";
+import { PomodoroScreen } from "../pages/PomodoroScreen";
+import { History } from "../pages/History";
+import NotFound from "../pages/NotFound";
+import RequiredAuth from "./RequiredAuth";
+import Login from "../pages/Login";
+import Home from "../pages/Home";
 
 const RoutesWrapper: React.FC = () => (
   <Routes>
+    <Route path="/login" element={<Login />} />
     <Route
       path="/"
       element={
-        <Layout>
-          <Home />
-        </Layout>
-      }
-    />
-    <Route
-      path="/login"
-      element={<Login />}
-    />
-    <Route
-      path="/dashboard"
-      element={
         <RequiredAuth>
           <Layout>
-            <Dashboard />
+            <Home />
           </Layout>
         </RequiredAuth>
       }
     />
     <Route
-      path="/profile"
+      path="/pomodoro"
       element={
         <RequiredAuth>
           <Layout>
-            <Profile />
+            <PomodoroScreen />
+          </Layout>
+        </RequiredAuth>
+      }
+    />
+    <Route
+      path="/history"
+      element={
+        <Layout>
+          <History />
+        </Layout>
+      }
+    />
+    <Route
+      path="*"
+      element={
+        <RequiredAuth>
+          <Layout>
+            <NotFound />
           </Layout>
         </RequiredAuth>
       }

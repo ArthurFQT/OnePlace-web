@@ -39,7 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <ScrollToTop />
       <Header />
       <MainContent>{children}</MainContent>
-      <Footer />
+      {/* <Footer /> */}
     </LayoutContainer>
   );
 };

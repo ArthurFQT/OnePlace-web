@@ -7,7 +7,7 @@ const HeaderContainer = styled.header`
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: ${props => props.theme.colors.headerBackground};
+  background-color: ${props => props.theme.colors.header.background};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   position: fixed;
   top: 0;
@@ -46,8 +46,8 @@ const Header: React.FC = () => {
       <Logo to="/">OnePlace</Logo>
       <Nav>
         <NavLink to="/">Home</NavLink>
-        <NavLink to="/dashboard">Dashboard</NavLink>
-        <NavLink to="/profile">Profile</NavLink>
+        <NavLink to="/pomodoro">Pomodoro</NavLink>
+        <NavLink to="/history">History</NavLink>
       </Nav>
     </HeaderContainer>
   );

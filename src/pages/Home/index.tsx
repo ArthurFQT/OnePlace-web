@@ -4,6 +4,9 @@ import { DndContext, useDraggable, closestCenter } from "@dnd-kit/core";
 import { createSnapModifier } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import type { DragEndEvent } from "@dnd-kit/core";
+import { ResizableBox } from "react-resizable";
+import "react-resizable/css/styles.css";
+
 
 // ------------------------------------------------------------
 // STYLES
@@ -32,11 +35,17 @@ const Board = styled.div`
 const WidgetCard = styled.div`
   background-color: ${(props) => props.theme.colors.card.background};
   border-radius: ${(props) => props.theme.borderRadius.lg};
-  padding: ${(props) => props.theme.spacing[6]};
+  padding: ${(props) => props.theme.spacing[4]};
   box-shadow: ${(props) => props.theme.shadows.md};
   border: 1px solid ${(props) => props.theme.colors.border};
-  width: 200px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
 `;
+
 
 const RemoveButton = styled.button`
   margin-top: ${(props) => props.theme.spacing[3]};
@@ -98,14 +107,20 @@ function DraggableWidget({
   id,
   x,
   y,
+  w,
+  h,
   children,
   onRemove,
+  onResize,
 }: {
   id: string;
   x: number;
   y: number;
+  w: number;
+  h: number;
   children: React.ReactNode;
   onRemove: () => void;
+  onResize?: (width: number, height: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
 
@@ -119,9 +134,35 @@ function DraggableWidget({
 
   return (
     <div style={style}>
-      <div ref={setNodeRef} {...attributes} {...listeners}>
-        {children}
-      </div>
+      <ResizableBox
+        width={w}
+        height={h}
+        minConstraints={[100, 80]} // tamanho mínimo
+        onResizeStop={(e, { size }) => {
+          if (onResize) onResize(size.width, size.height);
+        }}
+        handle={
+          <span
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              cursor: "se-resize",
+            }}
+          >
+            ↘
+          </span>
+        }
+      >
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          style={{ width: "100%", height: "100%" }}
+        >
+          {children}
+        </div>
+      </ResizableBox>
 
       <RemoveButton onClick={onRemove}>Remover</RemoveButton>
     </div>
@@ -134,11 +175,13 @@ function DraggableWidget({
 const Home: React.FC = () => {
   const [selectedWidget, setSelectedWidget] = useState<WidgetId | "">("");
   const [gridSize, setGridSize] = useState(30);
+  const [widgetWidth, setWidgetWidth] = useState(200);
+  const [widgetHeight, setWidgetHeight] = useState(150);
 
   const snapToGrid = useMemo(() => createSnapModifier(gridSize), [gridSize]);
 
   const [widgets, setWidgets] = useState<
-    Record<string, { x: number; y: number }>
+    Record<string, { x: number; y: number; w: number; h: number }>
   >({});
 
   // ⬇ melhor posicionamento inicial baseado em grid
@@ -155,30 +198,35 @@ const Home: React.FC = () => {
       [selectedWidget]: {
         x: 40 + col * (gridSize * 8),
         y: 40 + row * (gridSize * 6),
+        w: widgetWidth,
+        h: widgetHeight,
       },
     }));
   }
 
-  function handleDragEnd(e: DragEndEvent) {
-    const { delta, active } = e;
-    if (!delta) return;
+ function handleDragEnd(e: DragEndEvent) {
+   const { delta, active } = e;
+   if (!delta) return;
 
-    setWidgets((prev) => {
-      const widget = prev[active.id];
-      if (!widget) return prev;
+   setWidgets((prev) => {
+     const widget = prev[active.id];
+     if (!widget) return prev;
 
-      return {
-        ...prev,
-        [active.id]: {
-          x: widget.x + delta.x,
-          y: widget.y + delta.y,
-        },
-      };
-    });
-  }
+     return {
+       ...prev,
+       [active.id]: {
+         ...widget, // mantém w e h
+         x: widget.x + delta.x,
+         y: widget.y + delta.y,
+       },
+     };
+   });
+ }
+
 
   function handleRemoveWidget(id: string) {
     setWidgets((prev) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [id]: _, ...rest } = prev;
       return rest;
     });
@@ -212,11 +260,30 @@ const Home: React.FC = () => {
             style={{ width: 80 }}
           />
         </label>
+        <label>
+          Largura:
+          <input
+            type="number"
+            value={widgetWidth}
+            onChange={(e) => setWidgetWidth(Number(e.target.value))}
+            style={{ width: 80 }}
+          />
+        </label>
+
+        <label>
+          Altura:
+          <input
+            type="number"
+            value={widgetHeight}
+            onChange={(e) => setWidgetHeight(Number(e.target.value))}
+            style={{ width: 80 }}
+          />
+        </label>
       </Header>
 
       <DndContext
         modifiers={[snapToGrid]}
-        collisionDetection={closestCenter} // ✅ minimum-distance
+        collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
         <Board>
@@ -228,7 +295,15 @@ const Home: React.FC = () => {
                 id={id}
                 x={pos.x}
                 y={pos.y}
+                w={pos.w}
+                h={pos.h}
                 onRemove={() => handleRemoveWidget(id)}
+                onResize={(w, h) => {
+                  setWidgets((prev) => ({
+                    ...prev,
+                    [id]: { ...prev[id], w, h },
+                  }));
+                }}
               >
                 <Widget />
               </DraggableWidget>
